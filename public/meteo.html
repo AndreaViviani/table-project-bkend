@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Meteo</title>
+</head>
+<body>
+<h2>Pagina per provare il server da agganciare a react</h2>
+<p>GET index : <form action="http://localhost:3000/Lombardia/2020/Maggio/15" method="GET">
+    <input type="submit" value="GET index"> (restituisce file .csv con il index per la Lombardia del 15 maggio 2020)
+</form>
+</p>
+<p>POST index : <form action="http://localhost:3000/" method="POST">
+    Regione: <input type = "text" name = "regione" value="Lombardia">  <br>
+    Giorno: <input type = "text" name = "giorno" value="15">
+    Mese: <input type = "text" name = "mese" value="Maggio">
+    Anno: <input type = "text" name = "anno" value="2020"><br>
+    <input type="submit" value="POST index"> (prende dal server ilMeteo.it e salva su file .csv il index per la Lombardia di maggio 2020)
+</form>
+</p>
+</body>
+</html>
+
