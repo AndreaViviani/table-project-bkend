@@ -9,6 +9,10 @@ var usersRouter = require('./routes/users');
 
 var app = express();
 
+
+//disabilitiamo la cache, (più che altro per debugging, poi può essere eliminato)
+app.disable('etag');
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'pug');
