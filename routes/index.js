@@ -153,27 +153,14 @@ router.get('/meteo/:regione([A-Za-z]*)/:provincia([A-Za-z]*)/:year(\\d+)/:month(
   axios.get(url)
   .then((resp)=> {
     if(resp.headers['content-type'] === 'text/csv') {
-      console.log(ssvJSON.ssvJSON(resp.data));
+      res.send(ssvJSON.ssvJSON(resp.data)[0]);
+    } else {
+      res.send({})
     }
   })
-  /*const provincia = req.params.provincia;
-  console.log("richiesta arrivata");
-  const fileName = `./public/meteo/allData/${req.params.regione}/${req.params.year}${req.params.month}${req.params.day}.csv`;
-  fs.readFile(fileName, 'utf8', function(err, file) {
-    if (err) {
-      res.send(err);
-      console.log(err);
-    }
-    else {
-      const myObject = csvJSON.csvJSON(file);
-      for (const el of myObject) {
-        if (el.LOCALITA === provincia) {
-          res.send(el);
-        }
-      }
-
-    }
-  })*/
+  .catch((err)=>{
+    res.send(err);
+  })
 })
 
 
