@@ -1,54 +1,164 @@
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
-const meteo = require("./meteoGetOneDayCitiesCSV");
 const csvJSON = require("./../private/CSVToJSON");
+const ssvJSON = require("./../private/SSVToJSON");
+const axios = require('axios').default;
 
 /*Settiamo l'autorizzazione ad accedere dal mio dominio x il cors */
 var cors = require('cors');
-
-
-// use it before all route definitions
 router.use(cors({origin: 'http://localhost:3000'}));
 
-/* GET pagina iniziale. */
-router.get('/', function(req, res, next) {
-  let answer = '<html><body>' +
-    '<p>Backend di prova per chiamare le API di ilMeteo.it e restituire i file.csv</p>' +
-    '<a href="http://localhost:3000/meteo.html">Pagina iniziale</a>' +
-    '</body></html>';
-  res.writeHead(200, {'Content-Type': 'text/html'});
-  res.write(answer);
-  res.end();
-});
 
-router.get('/meteo/:regione([A-Za-z]*)/:anno(\\d+)/:mese([A-Za-z]*)/:giorno(\\d+)', function(req, res, next) {
-  const fileName = 'meteo/' + req.params.regione + '/' + req.params.anno + '/' + req.params.mese + '/' + req.params.giorno + '.csv';
-  console.log('GET fileName: ' + fileName);
-  fs.readFile(fileName, 'utf8', function(err, file) {
-    if (err) {
-      throw err;
+
+//get covid data x regione x un giorno
+router.get(`/covid/:regione/:year/:month/:day`, (req, res, next)=>{
+  console.log(req.params);
+  const fileName = `./public/covid-data/dpc-covid19-ita-province-${req.params.year}${req.params.month}${req.params.day}.csv`;
+  console.log(fileName);
+  fs.readFile(fileName, "utf-8", function(err, data) {
+    if(err){
+      console.log(err);
+      res.send({ error: err})
+    } else {
+      console.log(data);
+      const jsonData = csvJSON.csvJSON(data);
+      const dataToSend = [];
+      for (el of jsonData) {
+        if (el.denominazione_regione === req.params.regione) {
+          dataToSend.push(el)
+        }
+      }
+      res.send({error: false, data: dataToSend});
     }
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Credentials", true);
-    res.writeHead(200, {'Content-Type': 'text/csv'});
+  })
+})
 
-    res.write(file);
-    res.end();
-    console.log(file);
-  });
-});
+//get covid data x regione x un giorno
+router.get(`/meteo/:regione/:year/:month/:day`, (req, res, next)=>{
+  let month = "";
+  switch(req.params.month){
+    case "01": 
+      month = "Gennaio";
+      break;
+    case "02": 
+      month = "Febbraio";
+      break;  
+    case "03": 
+      month = "Marzo";
+      break;
+    case "04": 
+      month = "Aprile";
+      break;
+    case "05": 
+      month = "Maggio";
+      break;
+    case "06": 
+      month = "Giugno";
+      break;
+    case "07": 
+      month = "Luglio";
+      break;
+    case "08": 
+      month = "Agosto";
+      break;
+    case "09": 
+      month = "Settembre";
+      break;
+    case "10": 
+      month = "Ottobre";
+      break;
+    case "11": 
+      month = "Novembre";
+      break;
+    case "12":
+      month = "Dicembre";
+      break;
+  }
+  const date = `${req.params.year}/${month}/${req.params.day}`
+  const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
+  const dataToSend = [];
+  fs.readFile(`./public/province/${req.params.regione}.txt`, (err, data)=> {
+    if(err) {
+      res.send({ error: err})
+    } else {
+      const comuniStr = data.toString();
+      const comuni = comuniStr.split('\n');
+      for (let i = 0; i < comuni.length; i ++) {
+        const comune = comuni[i];
+        const url = `${urlRoot}${comune}/${date}?format=csv`;
+        axios.get(url)
+          .then((resp)=>{
+            if(resp.headers['content-type'] === 'text/csv'){
+              dataToSend.push(ssvJSON.ssvJSON(resp.data)[0]);
+                if (i === comuni.length - 1){
+                  console.log(dataToSend);
+                  res.send({error: false, data: dataToSend});
+                }
+            }
+          })
+          .catch((err)=> {
+            res.send({ error: err})
+          })
+      }
+    }
+  })
+})
 
-router.post('/', function(req, res, next) {
-  let data = req.body.anno + '/' + req.body.mese + '/' + req.body.giorno; // 2020/Maggio/15
-  meteo.setMeteo(req.body.regione, data, res);
-});
 
-// faccio la get che mi da il meteo per un dato giorno per una data provincia 
+// faccio la get che mi da il meteo per un dato giorno per una data provincia (per unire le tabelle)
 router.get('/meteo/:regione([A-Za-z]*)/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:day(\\d+)', function(req, res, next) {
-  const provincia = req.params.provincia;
+  const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
+  let month = "";
+  switch(req.params.month){
+    case "01": 
+      month = "Gennaio";
+      break;
+    case "02": 
+      month = "Febbraio";
+      break;  
+    case "03": 
+      month = "Marzo";
+      break;
+    case "04": 
+      month = "Aprile";
+      break;
+    case "05": 
+      month = "Maggio";
+      break;
+    case "06": 
+      month = "Giugno";
+      break;
+    case "07": 
+      month = "Luglio";
+      break;
+    case "08": 
+      month = "Agosto";
+      break;
+    case "09": 
+      month = "Settembre";
+      break;
+    case "10": 
+      month = "Ottobre";
+      break;
+    case "11": 
+      month = "Novembre";
+      break;
+    case "12":
+      month = "Dicembre";
+      break;
+  }
+  const date = `${req.params.year}/${month}/${req.params.day}`
+  const url = `${urlRoot}${req.params.provincia}/${date}?format=csv`;
+  axios.get(url)
+  .then((resp)=> {
+    if(resp.headers['content-type'] === 'text/csv') {
+      console.log(ssvJSON.ssvJSON(resp.data));
+    }
+  })
+  /*const provincia = req.params.provincia;
   console.log("richiesta arrivata");
-  const fileName = `meteo/allData/${req.params.regione}/${req.params.year}${req.params.month}${req.params.day}.csv`;
+  const fileName = `./public/meteo/allData/${req.params.regione}/${req.params.year}${req.params.month}${req.params.day}.csv`;
   fs.readFile(fileName, 'utf8', function(err, file) {
     if (err) {
       res.send(err);
@@ -63,15 +173,17 @@ router.get('/meteo/:regione([A-Za-z]*)/:provincia([A-Za-z]*)/:year(\\d+)/:month(
       }
 
     }
-  })
+  })*/
 })
 
+
+//get per i dati salvati
 router.post("/save/:title", function(req, res, next) {
   const dataToSave = req.body.data;
   const toSaveName = req.params.title;
   console.log("richiesta arrivata");
   console.log(dataToSave);
-  if (fs.existsSync(`./public/savedFile/${toSaveName}.json`)) {
+  if (fs.existsSync(`./public/saved-files/${toSaveName}.json`)) {
     res.send({nameIsTaken: true, success: false})
   } else {
     fs.appendFile(`./public/savedFile/${toSaveName}.json`, JSON.stringify(dataToSave), (err) => {
