@@ -84,12 +84,15 @@ router.get(`/meteo/:regione/:year/:month/:day`, (req, res, next)=>{
     } else {
       const comuniStr = data.toString();
       const comuni = comuniStr.split('\n');
+      console.log(comuni.length);
       for (let i = 0; i < comuni.length; i ++) {
+        console.log()
         const comune = comuni[i];
         const url = `${urlRoot}${comune}/${date}?format=csv`;
         axios.get(url)
           .then((resp)=>{
             if(resp.headers['content-type'] === 'text/csv'){
+              console.log(ssvJSON.ssvJSON(resp.data)[0]);
               dataToSend.push(ssvJSON.ssvJSON(resp.data)[0]);
                 if (i === comuni.length - 1){
                   console.log(dataToSend);
@@ -163,8 +166,7 @@ router.get('/meteo/:regione([A-Za-z]*)/:provincia([A-Za-z]*)/:year(\\d+)/:month(
   })
 })
 
-
-//get per i dati salvati
+//post per salvare i dati
 router.post("/save/:title", function(req, res, next) {
   const dataToSave = req.body.data;
   const toSaveName = req.params.title;
@@ -173,7 +175,7 @@ router.post("/save/:title", function(req, res, next) {
   if (fs.existsSync(`./public/saved-files/${toSaveName}.json`)) {
     res.send({nameIsTaken: true, success: false})
   } else {
-    fs.appendFile(`./public/savedFile/${toSaveName}.json`, JSON.stringify(dataToSave), (err) => {
+    fs.appendFile(`./public/saved-files/${toSaveName}.json`, JSON.stringify(dataToSave), (err) => {
       if (err) {
         res.send(err);
         console.log(err);
@@ -182,6 +184,34 @@ router.post("/save/:title", function(req, res, next) {
       }
     })
   }
+})
+
+router.post("/save/force/:title", function(req, res, next) {
+  const dataToSave = req.body.data;
+  const toSaveName = req.params.title;
+  console.log("richiesta arrivata");
+  console.log(dataToSave);
+  fs.writeFile(`./public/saved-files/${toSaveName}.json`, JSON.stringify(dataToSave), (err) => {
+      if (err) {
+        res.send(err);
+        console.log(err);
+      } else {
+        res.send({nameIsTaken: true, success: true})
+      }
+    })
+  })
+
+//get per i dati salvati
+router.get("/saved/:filename", (req, res, next)=>{
+  const fileName = `./public/saved-files/${req.params.filename}.json`;
+  fs.readFile(fileName, "utf-8", (err, data) =>{
+    if (err) {
+      res.send({error: err});
+    } else {
+      console.log(data);
+      res.send({error: false, data: JSON.parse(data)});
+    }
+  })
 })
 
 module.exports = router;
