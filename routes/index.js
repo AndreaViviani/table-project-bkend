@@ -112,7 +112,7 @@ router.get(`/meteo/:regione/:year/:month/:day`, (req, res, next) => {
 
 
 // faccio la get che mi da il meteo per un dato giorno per una data provincia (per unire le tabelle)
-router.get('/meteo/:regione([A-Za-z]*)/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:day(\\d+)', function (req, res, next) {
+router.get('/meteo/single-line/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:day(\\d+)', function (req, res, next) {
   const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
   let month = "";
   switch (req.params.month) {
@@ -317,14 +317,15 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
       for (let i = 0; i < inRangeCities.length; i++) {
         const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
         axios.get(`${urlRoot}${inRangeCities[i].comune}/${date}?format=csv`)
-          .then((res) => {
-            if (res.headers['content-type'] === 'text/csv') {
+          .then((resp) => {
+            if (resp.headers['content-type'] === 'text/csv') {
               citiesToSend.push(inRangeCities[i]);
             }
             resCounter = resCounter + 1;
             //controllo se ha finito e mando
             if(resCounter === (inRangeCities.length - 1)) {
               console.log(citiesToSend);
+              res.send(citiesToSend);
             }
           })
           .catch((err) => {
