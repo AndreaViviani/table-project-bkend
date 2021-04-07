@@ -115,6 +115,8 @@ router.get(`/meteo/:regione/:year/:month/:day`, (req, res, next) => {
 router.get('/meteo/single-line/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:day(\\d+)', function (req, res, next) {
   const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
   let month = "";
+  console.log('ricevuto')
+  console.log(req.params.provincia);
   switch (req.params.month) {
     case "01":
       month = "Gennaio";
@@ -278,6 +280,11 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
         regione = munic.regione;
         break;
       }
+    }
+
+    if (regione === "") {
+      res.send({error: "no cities found"});
+      return;
     }
 
     for (const munic of allMunic) {
