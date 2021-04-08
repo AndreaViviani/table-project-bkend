@@ -220,7 +220,8 @@ router.get("/saved/:filename", (req, res, next) => {
 
 
 // get alternatives for an empty row
-router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:day(\\d+)/:km(\\d+)", (req, res, next) => {
+router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:day(\\d+)", (req, res, next) => {
+
   let regione = "";
   const provincia = req.params.provincia;
   let month = "";
@@ -266,8 +267,20 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
   const sameRegionMunic = [];
   let inRangeCities = [];
   const provinceCoords = {};
-  const distance = req.params.km;
   let citiesToSend = [];
+  let range = 30;
+  // questa servirà per ordinare le città da mandare
+  function compare(a, b) {
+    if (a.dist < b.dist) {
+      return -1;
+    }
+    if (a.dist > b.dist) {
+      return 1;
+    }
+    return 0;
+  }
+  // e questa per mettere le città in range in un array
+
   fs.readFile("./public/all-cities/italy_munic.json", (err, data) => {
     if (err) {
       res.send({ error: err });
@@ -283,15 +296,19 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
     }
 
     if (regione === "") {
-      res.send({error: "no cities found"});
+      res.send({ error: "no cities found" });
       return;
     }
 
     for (const munic of allMunic) {
       if (munic.regione === regione) {
         sameRegionMunic.push({ comune: munic.comune });
+        if (munic.comune === provincia) {
+          console.log("trovato");
+        }
       }
     }
+
 
     fs.readFile("./public/all-cities/italy_geo.json", (err, data) => {
       if (err) {
@@ -303,6 +320,8 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
         for (const geo of allGeo) {
           if (city.comune === geo.comune) {
             if (city.comune === provincia) {
+              city["lat"] = geo.lat;
+              city["lng"] = geo.lng;
               provinceCoords.lng = geo.lng;
               provinceCoords.lat = geo.lat;
             } else {
@@ -312,27 +331,42 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
           }
         }
       }
-      // adesso ho un array con tutti i comuni della regione e relative coordinate sameRegionMunic
+
+
       for (const city of sameRegionMunic) {
         //aggiungo ad ogni elemento anche la distanza
         city["dist"] = getDistanceFromLatLonInKm(provinceCoords.lat, provinceCoords.lng, city.lat, city.lng);
-        if (city.dist < 30) {
+        if (city.dist < range) {
           inRangeCities.push(city);
         }
       }
+
       let resCounter = 0;
       for (let i = 0; i < inRangeCities.length; i++) {
         const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
         axios.get(`${urlRoot}${inRangeCities[i].comune}/${date}?format=csv`)
           .then((resp) => {
             if (resp.headers['content-type'] === 'text/csv') {
-              citiesToSend.push(inRangeCities[i]);
+
+              //controllo che siano dati validi (a volte meteo.it manda dati vuoti)
+              const meteoJson = ssvJSON.ssvJSON(resp.data)[0];
+              const meteoKeys = Object.keys(meteoJson);
+              let areDataOk = false;
+              // se almeno un campo è valido inserisco altrimenti no
+              for (const key of meteoKeys) {
+                if (meteoJson[key]) {
+                  areDataOk = true;
+                }
+              }
+              if (areDataOk) {
+                citiesToSend.push(inRangeCities[i]);
+              }
+
             }
             resCounter = resCounter + 1;
             //controllo se ha finito e mando
-            if(resCounter === (inRangeCities.length - 1)) {
-              console.log(citiesToSend);
-              res.send(citiesToSend);
+            if (resCounter === (inRangeCities.length - 1)) {
+              res.send(citiesToSend.sort(compare).slice(0, 5));
             }
           })
           .catch((err) => {
