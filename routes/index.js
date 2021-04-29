@@ -190,11 +190,11 @@ router.post("/save/:title", function (req, res, next) {
   }
 })
 
-router.post("/save/force/:title", function (req, res, next) {
+router.put("/save/:filename", function (req, res, next) {
   const dataToSave = req.body.data;
-  const toSaveName = req.params.title;
+  const toSaveName = req.params.filename;
   console.log("richiesta arrivata");
-  console.log(dataToSave);
+  console.log(JSON.stringify(dataToSave));
   fs.writeFile(`./public/saved-files/${toSaveName}.json`, JSON.stringify(dataToSave), (err) => {
     if (err) {
       res.send(err);
@@ -340,7 +340,7 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
           inRangeCities.push(city);
         }
       }
-
+      console.log(inRangeCities);
       let resCounter = 0;
       for (let i = 0; i < inRangeCities.length; i++) {
         const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
