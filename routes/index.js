@@ -86,9 +86,7 @@ router.get(`/meteo/:regione/:year/:month/:day`, (req, res, next) => {
     } else {
       const comuniStr = data.toString();
       const comuni = comuniStr.split('\n');
-      console.log(comuni.length);
       for (let i = 0; i < comuni.length; i++) {
-        console.log()
         const comune = comuni[i];
         const url = `${urlRoot}${comune}/${date}?format=csv`;
         axios.get(url)
@@ -206,7 +204,7 @@ router.put("/save/:filename", function (req, res, next) {
 })
 
 //get per i dati salvati
-router.get("/saved/:filename", (req, res, next) => {
+router.get("/save/:filename", (req, res, next) => {
   const fileName = `./public/saved-files/${req.params.filename}.json`;
   fs.readFile(fileName, "utf-8", (err, data) => {
     if (err) {
