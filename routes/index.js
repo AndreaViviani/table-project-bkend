@@ -282,12 +282,11 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
   fs.readFile("./public/all-cities/italy_munic.json", (err, data) => {
     if (err) {
       res.send({ error: err });
-      console.log(err);
+      return;
     }
     const allMunic = JSON.parse(data);
     for (const munic of allMunic) {
       if (munic.comune === provincia) {
-        console.log(munic.regione);
         regione = munic.regione;
         break;
       }
@@ -301,9 +300,6 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
     for (const munic of allMunic) {
       if (munic.regione === regione) {
         sameRegionMunic.push({ comune: munic.comune });
-        if (munic.comune === provincia) {
-          console.log("trovato");
-        }
       }
     }
 
@@ -311,7 +307,7 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
     fs.readFile("./public/all-cities/italy_geo.json", (err, data) => {
       if (err) {
         res.send({ error: err });
-        console.log(err);
+        return;
       }
       const allGeo = JSON.parse(data);
       for (const city of sameRegionMunic) {
@@ -338,8 +334,18 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
           inRangeCities.push(city);
         }
       }
-      console.log(inRangeCities);
       let resCounter = 0;
+
+
+
+      // setTimeout to prevent waiting forever from meteo.it
+      setTimeout(()=>{
+        if(!res.headersSent) {
+          res.send({error: 'Time out: our server did not received response on time'});
+        }
+        
+      }, 15000)
+
       for (let i = 0; i < inRangeCities.length; i++) {
         const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
         axios.get(`${urlRoot}${inRangeCities[i].comune}/${date}?format=csv`)
@@ -363,14 +369,22 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
             }
             resCounter = resCounter + 1;
             //controllo se ha finito e mando
-            if (resCounter === (inRangeCities.length - 1)) {
+            if (resCounter === (inRangeCities.length - 1) && citiesToSend.length > 0) {
+              console.log(citiesToSend.sort(compare).slice(0, 5));
               res.send(citiesToSend.sort(compare).slice(0, 5));
+              return;
+            } else if (resCounter === (inRangeCities.length - 1) && citiesToSend.length === 0) {
+              console.log('no matching value');
+              res.send({ error: 'no matching value' });
+              return;
             }
           })
           .catch((err) => {
-            console.log(err);
+            console.log({ error: err });
           })
       }
+
+
     })
   })
 })
