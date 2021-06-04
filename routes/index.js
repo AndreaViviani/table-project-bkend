@@ -344,7 +344,7 @@ router.get("/get-options/meteo/:provincia([A-Za-z]*)/:year(\\d+)/:month(\\d+)/:d
           res.send({error: 'Time out: our server did not received response on time'});
         }
         
-      }, 15000)
+      }, 20000)
 
       for (let i = 0; i < inRangeCities.length; i++) {
         const urlRoot = "https://www.ilmeteo.it/portale/archivio-meteo/";
