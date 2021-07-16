@@ -1,15 +1,25 @@
-# table-project-bkend
+# Run the application
 
-To run this project:
+### Prerequisites
+1. Be sure to have the **stable version of Node** installed on your machine. The LST (Long Term Support) is available at this [link](https://nodejs.org/dist/v14.17.3/node-v14.17.3-x64.msi).
+2. Be sure to have **Git** installed
 
-1) create express project con webstorm (in realtà basta creare qualunque server nodejs, ci basta la cartella node_modules, che non viene scaricata dal repos)
+### How to run
+1. Clone the repository from github with the following command: 
+```bash
+git clone https://github.com/AndreaViviani/table-project-bkend.git
+```
+2. Position yourself inside the cloned folder:
+```bash
+cd ./table-project-bkend
+```
+5. Install all application's dependencies:
+```
+npm install
+```
+6. Run the application:
+```bash
+node www
+```
 
-2) scaricare il progetto dal repos
-
-3) sostituire tutti i file del progetto creato al punto uno con quelli scaricati dal repos
-
-4) istallare le dipendenze con il comando <npm install> nella root del progetto 
-
-5) nella root del progetto, x runnare eseguire il comando <node www> oppure runnare direttamente dalla gui di webstorm
-
-6) il server corre sulla porta 3001, per evitare conflitti con il front end
+**N.B.:** the node server runs on http://localhost:3001
